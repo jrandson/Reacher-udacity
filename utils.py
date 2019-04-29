@@ -1,4 +1,4 @@
-from parallelEnv import parallelEnv 
+# from parallelEnv import parallelEnv
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
@@ -150,16 +150,70 @@ def collect_trajectories(envs, policy, tmax=200, nrand=5):
     return prob_list, state_list, \
         action_list, reward_list
 
+
+def collect_trajectories_unity(env, policy, n=20, tmax=200, nrand=5):
+    """
+
+    :param env:
+    :param policy:
+    :param n:
+    :param tmax:
+    :param nrand:
+    :return:
+    """
+
+    brain_name = env.brain_names[0]
+    brain = env.brains[brain_name]
+    action_size = brain.vector_action_space_size
+    env_info = env.reset(train_mode=True)[brain_name]
+
+    print("collecting trajectories")
+    for _ in range(tmax):
+        print("\r{}/{}".format(_, tmax), end="", flush=True)
+
+        actions = np.random.randn(n, action_size)  # select an action (for each agent)
+        actions = np.clip(actions, -1, 1)  # all actions between -1 and 1
+        env_info = env.step(actions)[brain_name]  # send all actions to tne environment
+        next_states = env_info.vector_observations  # get next state (for each agent)
+        rewards = env_info.rewards  # get reward (for each agent)
+        dones = env_info.local_done  # see if episode finished
+
+        # probs will only be used as the pi_old
+        # no gradient propagation is needed
+        # so we move it to the cpu
+        state_size = next_states.shape[1]
+        next_states = np.reshape(next_states, (n, 1, state_size))
+        batch_input = torch.from_numpy(next_states).float().to(device)
+        probs = policy(batch_input).squeeze().cpu().detach().numpy()
+
+        if np.any(dones):  # exit loop if episode finished
+            break
+
+    # return pi_theta, states, actions, rewards, probability
+    return probs, next_states, actions, rewards
+
+
 # convert states to probability, passing through the policy
 def states_to_prob(policy, states):
     states = torch.stack(states)
     policy_input = states.view(-1,*states.shape[-3:])
     return policy(policy_input).view(states.shape[:-3])
 
-# return sum of log-prob divided by T
-# same thing as -policy_loss
+
 def surrogate(policy, old_probs, states, actions, rewards,
               discount = 0.995, beta=0.01):
+    """
+     return sum of log-prob divided by T
+     same thing as -policy_loss
+    :param policy:
+    :param old_probs:
+    :param states:
+    :param actions:
+    :param rewards:
+    :param discount:
+    :param beta:
+    :return:
+    """
 
     discount = discount**np.arange(len(rewards))
     rewards = np.asarray(rewards)*discount[:,np.newaxis]
@@ -192,11 +246,23 @@ def surrogate(policy, old_probs, states, actions, rewards,
     return torch.mean(ratio*rewards + beta*entropy)
 
     
-# clipped surrogate function
-# similar as -policy_loss for REINFORCE, but for PPO
+
 def clipped_surrogate(policy, old_probs, states, actions, rewards,
                       discount=0.995,
                       epsilon=0.1, beta=0.01):
+    """
+     clipped surrogate function
+     similar as -policy_loss for REINFORCE, but for PPO
+    :param policy:
+    :param old_probs:
+    :param states:
+    :param actions:
+    :param rewards:
+    :param discount:
+    :param epsilon:
+    :param beta:
+    :return:
+    """
 
     discount = discount**np.arange(len(rewards))
     rewards = np.asarray(rewards)*discount[:,np.newaxis]
@@ -238,32 +304,4 @@ def clipped_surrogate(policy, old_probs, states, actions, rewards,
     # this is desirable because we have normalized our rewards
     return torch.mean(clipped_surrogate + beta*entropy)
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-class Policy(nn.Module):
-
-    def __init__(self):
-        super(Policy, self).__init__()
-        # 80x80x2 to 38x38x4
-        # 2 channel from the stacked frame
-        self.conv1 = nn.Conv2d(2, 4, kernel_size=6, stride=2, bias=False)
-        # 38x38x4 to 9x9x32
-        self.conv2 = nn.Conv2d(4, 16, kernel_size=6, stride=4)
-        self.size=9*9*16
-        
-        # two fully connected layer
-        self.fc1 = nn.Linear(self.size, 256)
-        self.fc2 = nn.Linear(256, 1)
-
-        # Sigmoid to 
-        self.sig = nn.Sigmoid()
-        
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = x.view(-1,self.size)
-        x = F.relu(self.fc1(x))
-        return self.sig(self.fc2(x))
     
