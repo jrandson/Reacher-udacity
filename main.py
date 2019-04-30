@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 import progressbar as pb
 import torch.optim as optim
 
-from utils import device, collect_trajectories, collect_trajectories_unity, surrogate, clipped_surrogate
+from utils import device, collect_trajectories, collect_trajectories_unity, collect_trajectories_ppo, \
+    surrogate, clipped_surrogate
 from Policy import Policy
 
 
@@ -127,12 +128,20 @@ def surrigate_train(envs, optimizer, policy, num_episodes):
     for e in range(num_episodes):
 
         # collect trajectories
-        old_probs, states, actions, rewards = collect_trajectories_unity(envs, policy, tmax=tmax)
+        old_probs, states, actions, rewards = collect_trajectories_ppo(envs, policy, tmax=tmax)
+        print(len(old_probs))
+        print(len(states))
+        print(len(actions))
+        print(len(rewards))
+
         print(actions)
         print()
         print(np.shape(old_probs))
         print(old_probs)
+        print()
+        print(rewards)
         exit()
+
         total_rewards = np.sum(rewards, axis=0)
 
         L = -surrogate(policy, old_probs, states, actions, rewards, beta=beta)
@@ -165,7 +174,7 @@ if __name__ == "__main__":
 
     print("using device: ", device)
 
-    env = UnityEnvironment(file_name="./Reacher_Linux20/Reacher.x86_64", no_graphics=True)
+    env = UnityEnvironment(file_name="./Reacher_Linux/Reacher.x86_64", no_graphics=True)
 
     # initialize environment
     # env = parallelEnv('PongDeterministic-v4', n=8, seed=1234)

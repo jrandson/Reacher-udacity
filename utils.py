@@ -193,6 +193,75 @@ def collect_trajectories_unity(env, policy, n=20, tmax=200, nrand=5):
     return probs, next_states, actions, rewards
 
 
+def collect_trajectories_ppo(env, policy, tmax=200, nrand=5):
+    brain_name = env.brain_names[0]
+    brain = env.brains[brain_name]
+    env_info = env.reset(train_mode=True)[brain_name]  # reset the environment
+
+    # number of parallel instances
+    n = len(env_info.agents)
+    print(f"num agents:{n}")
+
+    # initialize returning lists and start the game!
+    state_list = []
+    reward_list = []
+    log_prob_list = []
+    action_list = []
+
+    states = env_info.vector_observations  # get the current state (for each agent)
+    states = torch.from_numpy(states).float().to(device)
+
+    for t in range(tmax):
+
+        states = states.unsqueeze(0)
+        action = policy.forward(states)
+
+        log_probs = torch.tensor(np.random.rand(1,4), dtype=torch.float, device=device)
+
+        # To use np and the environment as follows, tranfer everything into numpy
+        action = action.cpu().detach().numpy()
+        log_probs = log_probs.cpu().detach().numpy()
+        action = np.clip(action, -1, 1)  # all actions between -1 and 1
+
+        env_info = env.step(action)[brain_name]  # send all actions to tne environment
+
+        # remove [0] for multiple agents
+        next_state = env_info.vector_observations  # get next state (for each agent)
+        reward = env_info.rewards  # get reward (for each agent)
+        done = env_info.local_done  # see if episode finished
+
+        # store the result in form of numpy & list
+        state_list.append(states)
+        reward_list.append(reward)
+        log_prob_list.append(log_probs)
+        action_list.append(action)
+
+        states = next_state
+
+        # print('states middle',type(states))
+        # print('states middle:',states)
+
+        # return states from list to be tensor
+        # states = torch.FloatTensor(states)
+        states = torch.from_numpy(states).float().to(device)
+        # print('states after',type(states))
+        # print('states after:',states)
+
+        if done:
+            break
+
+    # stop if any of the trajectories is done
+    # we want all the lists to be retangular
+    '''
+    if is_done.any():
+        break
+    '''
+
+    # return pi_theta, states, actions, rewards, probability
+    return log_prob_list, state_list, \
+           action_list, reward_list
+
+
 # convert states to probability, passing through the policy
 def states_to_prob(policy, states):
     states = torch.stack(states)
