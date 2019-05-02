@@ -3,13 +3,14 @@ import time
 from unityagents import UnityEnvironment
 from parallelEnv import parallelEnv
 import numpy as np
-from matplotlib import pyplot as plt
-import progressbar as pb
 import torch.optim as optim
 
-from utils import device, collect_trajectories, collect_trajectories_unity, collect_trajectories_ppo, \
-    surrogate, clipped_surrogate
-from Policy import Policy
+from collections import deque
+import matplotlib.pyplot as plt
+import torch
+
+from agent import Agent
+from models import Actor, Critic
 
 
 def print_env_info(env):
@@ -109,6 +110,7 @@ def clipped_surrigate_train():
 
     timer.finish()
 
+
 def surrigate_train(envs, optimizer, policy, num_episodes):
     from parallelEnv import parallelEnv
     import numpy as np
@@ -169,9 +171,65 @@ def surrigate_train(envs, optimizer, policy, num_episodes):
     return mean_rewards
 
 
+def run_ddpg(n_episodes=1000, max_t=10000, print_every=100):
+    """DDQN Algorithm.
+
+    Params
+    ======
+        n_episodes (int): maximum number of training episodes
+        max_t (int): maximum number of timesteps per episode
+        print_every (int): frequency of printing information throughout iteration """
+
+    gamma = 0.99
+    scores = []
+
+    for i_episode in range(1, n_episodes + 1):
+        env_info = env.reset(train_mode=True)[brain_name]
+        agent.reset()
+        state = env_info.vector_observations[0]  # get the current state
+        score = 0
+
+        for t in range(max_t):
+            print("\r {} from {} episode: {}".format(t, max_t, i_episode), end="", flush=True)
+            action = agent.act(state)  # select an action
+
+            env_info = env.step(action)[brain_name]  # send the action to the environment
+            next_state = env_info.vector_observations[0]  # get the next state
+            reward = env_info.rewards[0]  # get the reward
+            done = env_info.local_done[0]  # see if episode has finished
+
+            agent.learn(state, action, reward, next_state, done, gamma)  # take step with agent (including learning)
+            score += reward  # update the score
+            state = next_state  # roll over the state to next time step
+
+            if done:  # exit loop if episode finished
+                break
+
+        scores.append(score)  # save most recent score
+
+        print('\rEpisode {} \tAverage Score: {:.2f}'.format(i_episode, np.mean(scores)), end="", flush=True)
+
+        if i_episode % print_every == 0 and len(scores) >= 100:
+            print('\r Episode {}\tAverage Score (last 100 episodes) : {:.2f}'.format(i_episode, np.mean(scores[:-100])))
+            torch.save(agent.actor.state_dict(), 'checkpoint_actor.pth')
+            torch.save(agent.critic.state_dict(), 'checkpoint_critic.pth')
+
+        if np.mean(scores[:-100]) >= 30.0:
+            print('\n Environment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode,
+                                                                                         np.mean(scores[:-100])))
+            torch.save(agent.actor.state_dict(), 'checkpoint_actor.pth')
+            torch.save(agent.critic.state_dict(), 'checkpoint_critic.pth')
+            break
+
+    return scores
+
+
 
 if __name__ == "__main__":
 
+
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using device: ", device)
 
     env = UnityEnvironment(file_name="./Reacher_Linux/Reacher.x86_64", no_graphics=True)
@@ -187,27 +245,17 @@ if __name__ == "__main__":
     states = env_info.vector_observations
     state_size = states.shape[1]
 
+    agent = Agent(state_size=state_size, action_size=action_size, random_seed=10)
 
-    # run your own policy!
-    policy = Policy().to(device)
-    # policy=pong_utils.Policy().to(device)
+    scores = run_ddpg(n_episodes=1000, max_t=500)
 
-    # we use the adam optimizer with learning rate 2e-4
-    # optim.SGD is also possible
-    optimizer = optim.Adam(policy.parameters(), lr=1e-4)
+    w = 10
+    smorth_scores = [np.mean(scores[i-w:i]) for i in range(w, len(scores))]
 
-    num_episodes = 200
-    mean_rewards = surrigate_train(env, optimizer, policy, num_episodes)
-
-
-    # agent = Agent(state_size=state_size, action_size=action_size, seed=0)
-    #
-    # scores = run_dql(env, agent)
-    #
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # plt.plot(np.arange(len(scores)), scores)
-    # plt.ylabel('Score')
-    # plt.xlabel('Episode #')
-    # plt.savefig('episodexscore.png')
-    # plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.plot(np.arange(len(smorth_scores)), smorth_scores)
+    plt.ylabel('Score')
+    plt.xlabel('Episode #')
+    plt.savefig('episode_x_score.png')
+    plt.show()
