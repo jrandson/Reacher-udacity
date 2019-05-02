@@ -107,3 +107,6 @@ venv.bak/
 Reacher*
 
 .idea
+
+#checkpoints
+*.pth
