@@ -182,6 +182,7 @@ def run_ddpg(n_episodes=1000, max_t=10000, print_every=100):
 
     gamma = 0.99
     scores = []
+    mean_scores = []
 
     for i_episode in range(1, n_episodes + 1):
         env_info = env.reset(train_mode=True)[brain_name]
@@ -206,8 +207,13 @@ def run_ddpg(n_episodes=1000, max_t=10000, print_every=100):
                 break
 
         scores.append(score)  # save most recent score
+        if len(scores) >= 100:
+            mean_scores.append(np.mean(scores[:-100]))
 
-        print('\rEpisode {} \tAverage Score: {:.2f}'.format(i_episode, np.mean(scores)), end="", flush=True)
+            print('\r Episode {} \tAverage Score (100 episodes): {:.2f}'.format(i_episode, np.mean(scores[:-100])), end="", flush=True)
+        else:
+            print('\r Episode {} \tAverage Score : {:.2f}'.format(i_episode, np.mean(scores)),
+                  end="", flush=True)
 
         if i_episode % print_every == 0 and len(scores) >= 100:
             print('\r Episode {}\tAverage Score (last 100 episodes) : {:.2f}'.format(i_episode, np.mean(scores[:-100])))
@@ -221,7 +227,7 @@ def run_ddpg(n_episodes=1000, max_t=10000, print_every=100):
             torch.save(agent.critic.state_dict(), 'checkpoint_critic.pth')
             break
 
-    return scores
+    return scores, mean_scores
 
 
 
@@ -247,7 +253,11 @@ if __name__ == "__main__":
 
     agent = Agent(state_size=state_size, action_size=action_size, random_seed=10)
 
-    scores = run_ddpg(n_episodes=1000, max_t=500)
+    t = time.time()
+    scores, mean_scores = run_ddpg(n_episodes=10000)
+
+    t = time.time() - t
+    print("\n\tTraining got {} secs to be done.\n".format(t))
 
     w = 10
     smorth_scores = [np.mean(scores[i-w:i]) for i in range(w, len(scores))]
@@ -257,5 +267,13 @@ if __name__ == "__main__":
     plt.plot(np.arange(len(smorth_scores)), smorth_scores)
     plt.ylabel('Score')
     plt.xlabel('Episode #')
-    plt.savefig('episode_x_score.png')
+    plt.savefig('episode_x_score3.png')
+    plt.show()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.plot(np.arange(len(mean_scores)), mean_scores)
+    plt.ylabel('Mean Score (100 episodes) ')
+    plt.xlabel('Episode #')
+    plt.savefig('mean_score_100_episode3.png')
     plt.show()

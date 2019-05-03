@@ -25,7 +25,7 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
 
         output_fc1 = 128
-        output_fc2 = 128
+        output_fc2 = 256
 
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, output_fc1)
@@ -49,7 +49,7 @@ class Actor(nn.Module):
 
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
-        return F.tanh(self.fc3(x))
+        return F.sigmoid(self.fc3(x))
 
 
 class Critic(nn.Module):
@@ -67,7 +67,7 @@ class Critic(nn.Module):
         """
 
         output_fc1 = 128
-        output_fc2 = 128
+        output_fc2 = 256
 
         super(Critic, self).__init__()
         self.seed = torch.manual_seed(seed)
