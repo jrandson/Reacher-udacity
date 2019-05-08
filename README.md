@@ -1,6 +1,6 @@
 ### Deep Reiforcement Learning
 
-![An example of the environment to be solved](reach.gif)
+![An example of the environment to be solved](reacher.gif)
 #### The Environment
 
 In this project, an agent is trained to navigate (and collect bananas!) in a large, square world.
@@ -28,6 +28,7 @@ For this project, You can download the from the link below. You need only select
 
 Then, place the file in the Reacher-udacity/ folder and unzip (or decompress) the file. Open the main.py file and adjust the
 path of the Reacher environment to the correct one: 
+
 `env = UnityEnvironment(file_name="./Reacher_Linux/Reacher.x86_64", no_graphics=True)`
 
 You are encouraged to use a virtual env. You can set it using anaconda:
@@ -36,3 +37,5 @@ this project by running `$ pip install -r requirements.txt`
 
 After the instaltion is finished, run the main.py file by `$ python main.py` and observe the train model 
 running
+
+![An example of the environment to be solved](escore_x_episodes.png)
