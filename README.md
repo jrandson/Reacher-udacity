@@ -38,4 +38,4 @@ this project by running `$ pip install -r requirements.txt`
 After the instaltion is finished, run the main.py file by `$ python main.py` and observe the train model 
 running
 
-![An example of the environment to be solved](escore_x_episodes.png)
+![An example of the environment to be solved](score_x_episodes.png)
