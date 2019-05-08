@@ -1,4 +1,6 @@
-### Deep Reiforcement Learning
+#### Deep Deterministic Polyce Gradient 
+
+###### Reacher
 
 ![An example of the environment to be solved](reacher.gif)
 #### The Environment
