@@ -45,6 +45,8 @@ See the same same data above, now in a smorthed graph
 
 The main iproviments observed came in the neuro net models when it was consideres grow the number of neurons in the hidden layers and mostly importan, when it was included a batch normalization between the hidden layers.
 
+For more details about continous control with DDPG algorithm, read this [papper](https://arxiv.org/pdf/1509.02971.pdf)
+
 #### Further works
 
 As improviments of this implementation, it is convenient introduce some convolutional layers such as Conv1d and Conv2d and observe what results the training will have.
