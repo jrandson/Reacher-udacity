@@ -10,19 +10,18 @@ In the DDPG, the Actor model is trained to represent the polyce itself, in wich 
 
 
 Since, neural networks as classified as supervised learning, we need the target data in order to train these models. So, the target Q values are computed using the bellman equation:
-![score x epsodes](bellman_eq.png =150x150)
+
+<img src="bellman_eq.png" width="500" height="50" />
 
 
-There are two copies of each networks, one for the actor and another for the actor. These copies are the regular or online networks and the other is the target network. In each steps the target networks are slighted updated by the online network with a small percetange of their weights and this is called a soft update strategy.
+There are two copies of each networks, one for the actor and another for the actor. These copies are the regular/online networks and the other is the target network. In each steps the target networks are slighted updated by the online network with a small percetange of their weights and this is called a soft update strategy.
 
-These nework are have three full connected layers with relu as activation function at the hidden layer and a tanh in the output layer.
+These nework have three full connected layers with relu as activation function at the hidden layer and a tanh in the output layer.
 
 In DDPG, it used a buffer with store a bunch of steps responses (state, action, reward, next_state, done), which are sampled randomly by the Actor model to avoid correlation between them during the model training. This buffer ensure the model are being trained using data that are independents of each other.
 
-
-
-
-
+Inproviments in the explocation is done by adding some noise to the action. for this purpose it was used the Ornstein-Uhlenbeck Process, which has been proved to improve the action exploration according to this 
+[ddpg papper](https://arxiv.org/pdf/1509.02971.pdf)
 
 
 The archtecture of the projec counts with a agent class that uses these to solve the environmet.
@@ -36,11 +35,13 @@ The main parans used is described bellow:
 
 The result of training can be seen bellow
 
+See the graph of scores x episodes
 ![score x epsodes](score_x_episodes.png)
 
+See the same same data above, now in a smorthed graph
 ![score x epsodes](score_x_episodes_smorthed.png)
 
-
+#### critic points
 
 The main iproviments observed came in the neuro net models when it was consideres grow the number of neurons in the hidden layers and mostly importan, when it was included a batch normalization between the hidden layers.
 
