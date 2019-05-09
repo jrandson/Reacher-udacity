@@ -10,7 +10,7 @@ In the DDPG, the Actor model is trained to represent the polyce itself, in wich 
 
 
 Since, neural networks as classified as supervised learning, we need the target data in order to train these models. So, the target Q values are computed using the bellman equation:
-![score x epsodes](bellman_eq.png)
+![score x epsodes](bellman_eq.png | width=100)
 
 
 There are two copies of each networks, one for the actor and another for the actor. These copies are the regular or online networks and the other is the target network. In each steps the target networks are slighted updated by the online network with a small percetange of their weights and this is called a soft update strategy.
