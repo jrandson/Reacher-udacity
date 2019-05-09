@@ -4,7 +4,26 @@ this project was solved using pytoch framework, which is a powerfull tool for de
 
 #### Learing Algorithm
 
-For the solution of this projects, it was applied the DDPG (Deep Deterministic Policy Gradient) algorithm, which is very suitable for continuous spaces. This algorithm uses two similar neural network, one for the Actor and another for the Critic model. These nework are have three full connected layers with relu as activation function at the hidden layer and a tanh in the output layer.
+For the solution of this projects, it was applied the DDPG (Deep Deterministic Policy Gradient) algorithm, which is very suitable for continuous spaces. This algorithm uses two similar neural network, one for the Actor and another for the Critic model. 
+
+In the DDPG, the Actor model is trained to represent the polyce itself, in wich is responsable to map states to the best possible actions. It is used to appoximate the optimal policy deterministically. The Critic model, on the other hand, works to learn to evaluate the the pair (state, action) predicted by the Actor. That's mean that the both input and output of the actor are used by the critc model, in which the action is the target value.
+
+
+Since, neural networks as classified as supervised learning, we need the target data in order to train these models. So, the target Q values are computed using the bellman equation:
+![score x epsodes](bellman_eq.png)
+
+
+There are two copies of each networks, one for the actor and another for the actor. These copies are the regular or online networks and the other is the target network. In each steps the target networks are slighted updated by the online network with a small percetange of their weights and this is called a soft update strategy.
+
+These nework are have three full connected layers with relu as activation function at the hidden layer and a tanh in the output layer.
+
+In DDPG, it used a buffer with store a bunch of steps responses (state, action, reward, next_state, done), which are sampled randomly by the Actor model to avoid correlation between them during the model training. This buffer ensure the model are being trained using data that are independents of each other.
+
+
+
+
+
+
 
 The archtecture of the projec counts with a agent class that uses these to solve the environmet.
 The main parans used is described bellow:
@@ -12,7 +31,7 @@ The main parans used is described bellow:
 * within each episode, it was allowed to try only 1000 steps at the most
 * discount rate to the improviment of the polyce: 0.99
 * Reply buffer for a random selection of episode with size 10^6. The seelction batch in this buffer was 128
-* Both neuron nets for Actor and Critic models have 236 neurons in the hiddne layers
+* Both neuron nets for Actor and Critic models have 256 neurons in the hiddne layers
 * The MSE loss function was used to optimize the models.
 
 The result of training can be seen bellow
